@@ -1,15 +1,14 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"sort"
-	"text/template"
 	"time"
 
 	"github.com/lithammer/fuzzysearch/fuzzy"
@@ -31,6 +30,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer f.Close()
 
 	o := []obj{}
 	if err := json.NewDecoder(f).Decode(&o); err != nil {
@@ -44,7 +44,7 @@ func main() {
 
 	http.HandleFunc("/", handleHome)
 	http.HandleFunc("/search", handleSearch(list, o))
-	http.HandleFunc("/romanised.js", handleJS)
+	http.HandleFunc("/romanised.js", handleJS())
 	log.Println("server running")
 	http.ListenAndServe(":3000", nil)
 }
@@ -148,8 +148,6 @@ func handleSearch(list []string, o []obj) http.HandlerFunc {
 		if query == "" {
 			return
 		}
-		b := &bytes.Buffer{}
-		fmt.Fprintf(b, "<p>You searched: %s<p>", query)
 		matches := fuzzy.RankFind(query, list)
 		if len(matches) == 0 {
 			fmt.Fprintln(w, "No results")
@@ -172,12 +170,24 @@ func handleSearch(list []string, o []obj) http.HandlerFunc {
 	}
 }
 
-func handleJS(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("content-type", "text/javascript")
+func handleJS() http.HandlerFunc {
 	f, err := os.Open("romanised.js")
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
+		log.Println(err)
+		return func(w http.ResponseWriter, r *http.Request) {
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+		}
 	}
-	io.Copy(w, f)
+	defer f.Close()
+	b, err := io.ReadAll(f)
+	if err != nil {
+		log.Println(err)
+		return func(w http.ResponseWriter, r *http.Request) {
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+		}
+	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("content-type", "text/javascript")
+		w.Write(b)
+	}
 }

@@ -52,6 +52,11 @@ func main() {
 const html = `<!DOCTYPE html>
 <html>
     <head>
+        <meta charset="UTF-8">
+        <meta name="description" content="fuzzy search on nepali sabdakosh">
+        <meta name="keywords" content="sabdakosh, fuzzy search, nepali unicode, dictionary">
+        <meta name="author" content="Kishor Pokharel">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Sabdakosh</title>
         <script src="/romanised.js"></script>
         <link 

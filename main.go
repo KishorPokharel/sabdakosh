@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"text/template"
 	"time"
 
 	"github.com/lithammer/fuzzysearch/fuzzy"
@@ -43,6 +44,7 @@ func main() {
 
 	http.HandleFunc("/", handleHome)
 	http.HandleFunc("/search", handleSearch(list, o))
+	http.HandleFunc("/word/", handleWord())
 	http.HandleFunc("/romanised.js", handleJS)
 	log.Println("server running")
 	http.ListenAndServe(":3000", nil)
@@ -56,6 +58,8 @@ const html = `<!DOCTYPE html>
         <link 
             href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;700&amp;display=swap"
             rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.css">
         <style>
             #search-results {
                 font-family: 'Mukta';
@@ -64,12 +68,15 @@ const html = `<!DOCTYPE html>
     </head>
 
     <body>
+    <div class="container">
+        <h1>Sabdakosh</h1>
         <form>
             <input class="searchInput" type="text" name="searchquery" />
         </form>
 
         <p class="summary"></p>
         <section id="search-results"></section>
+        </div>
     </body>
     <script>
         const searchInput = document.querySelector(".searchInput");
@@ -100,8 +107,7 @@ const html = `<!DOCTYPE html>
             });
         });
 
-
-        searchInput.addEventListener("keyup", (e) => {
+        searchInput.addEventListener("input", (e) => {
             convertedText = convert(e.target.value);
             summary.innerText = "You searched: " + convertedText;
             fetchResults(convertedText);
@@ -115,27 +121,27 @@ func handleHome(w http.ResponseWriter, r *http.Request) {
 }
 
 const response = `
-<span>You searched: guithe</span>
-<ul>
-    <li>
-        <p>Word: Aa</p>
-        <p> Definitions: </p>
-        <ul>
-            <li>
-                <p>Grammar: na</p>
-                <ul>
-                    <p> Senses: </p>
-                    <li>1 </li>
-                    <li>2 </li>
-                    <li>3 </li>
-                </ul>
-            </li>
-        </ul>
-    </li>
-</ul>
+<div>
+    {{ range . }}
+    <div>
+        <h3>{{ .Word }}</h3>
+        <div  style="margin-left: 2rem">
+        {{ range .Definitions }}
+            <small> {{ .Grammar }} </small>
+            <small style="margin-left: 1rem"> {{ .Etymology }} </small>
+            {{ range .Senses }}
+                <p> {{ . }} </p>
+            {{ end }}
+        {{ end }}
+        </div>
+    <div>
+    {{ end }}
+    <div>
+</div>
 `
 
 func handleSearch(list []string, o []obj) http.HandlerFunc {
+	tmpl := template.Must(template.New("matches").Parse(response))
 	return func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
@@ -155,11 +161,11 @@ func handleSearch(list []string, o []obj) http.HandlerFunc {
 		if len(matches) > 25 {
 			matches = matches[:25]
 		}
-		for _, match := range matches {
-			m := o[match.OriginalIndex]
-			fmt.Fprint(w, m)
-			fmt.Fprintf(w, "\n-------------\n")
+		data := make([]obj, len(matches))
+		for i, match := range matches {
+			data[i] = o[match.OriginalIndex]
 		}
+		tmpl.Execute(w, data)
 
 		end := time.Now()
 		elapsed := end.Sub(start)
@@ -175,4 +181,9 @@ func handleJS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	io.Copy(w, f)
+}
+
+func handleWord() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+	}
 }

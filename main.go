@@ -44,7 +44,6 @@ func main() {
 
 	http.HandleFunc("/", handleHome)
 	http.HandleFunc("/search", handleSearch(list, o))
-	http.HandleFunc("/word/", handleWord())
 	http.HandleFunc("/romanised.js", handleJS)
 	log.Println("server running")
 	http.ListenAndServe(":3000", nil)
@@ -181,9 +180,4 @@ func handleJS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	io.Copy(w, f)
-}
-
-func handleWord() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-	}
 }

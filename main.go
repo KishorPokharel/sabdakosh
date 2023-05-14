@@ -71,6 +71,10 @@ const html = `<!DOCTYPE html>
         <h1>Sabdakosh</h1>
         <form>
             <input class="searchInput" type="text" name="searchquery" />
+            <label>
+            <input class="translator" checked type="checkbox" />
+            <small>Enable Roman to Nepali translation</small>
+            </label>
         </form>
 
         <p class="summary"></p>
@@ -81,10 +85,12 @@ const html = `<!DOCTYPE html>
         const searchInput = document.querySelector(".searchInput");
         const summary = document.querySelector(".summary");
         const searchResults = document.querySelector("#search-results");
+        const translator = document.querySelector(".translator");
 
         console.assert(searchInput != null);
         console.assert(summary != null);
         console.assert(searchResults != null);
+        console.assert(translator != null);
 
         const debounce = (cb, delay = 800) => {
             let timeout;
@@ -107,7 +113,7 @@ const html = `<!DOCTYPE html>
         });
 
         searchInput.addEventListener("input", (e) => {
-            convertedText = convert(e.target.value);
+            convertedText = translator.checked ? convert(e.target.value) : e.target.value;
             summary.innerText = "You searched: " + convertedText;
             fetchResults(convertedText);
         });

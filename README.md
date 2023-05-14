@@ -14,6 +14,3 @@ https://github.com/bikashpadhikari/nepali-brihat-sabdakosh-json
 
 
 ![](https://github.com/KishorPokharel/sabdakosh/blob/master/images/2.png)
-
-### TODO
-- Add checkbox to turn off romanized translation
